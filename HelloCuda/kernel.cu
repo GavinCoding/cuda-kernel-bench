@@ -36,84 +36,19 @@ __global__ void matrixMultNaiveKernel(const int* A, const int* B, int* C, size_t
     }
     else
         return; //thread is out of bound
+     
 
-   
-
+    
     
 }
 
-int main() {
-    std::vector< std::vector<int> > A =
-    {
-        {1,2,3},
-        {4,5,6},
-        {7,8,9},
-        {10,11,12},
-        {13,14,15}
-    };
-
-    std::vector< std::vector<int> > B =
-    {
-        {4,6,2,10,12},
-        {1,4,5,4,2},
-        {3,6,7,12,3}
-    };
-
-    std::vector<int> A_flat = flatten(A);
-    std::vector<int> B_flat = flatten(B);
-
-    int cSize = A.size() * B[0].size();
-    int* C = new int[cSize];
-
-
-    
-    MatrixMultCuda(A_flat.data(), B_flat.data(), C, A.size(), B[0].size(), A[0].size());
-
-    for (int i = 0; i < cSize; i++)
-    {
-        std::cout << C[i] << " ";
-        if ((i + 1) % (B[0].size()) == 0)
-           std::cout << std::endl;
-    }
-    delete[] C;
-    return 0;
-
-}
-//Converts 2d Vector into 1d array 
-std::vector<int> flatten (std::vector< std::vector<int> > tdv)
-{
-   
-    size_t rowCount = tdv.size(); //number of columns within 2d vector
-    size_t colCount = tdv[0].size();
-
-   
-
-    std::vector<int> flat;
-  /*  std::cout << sizeof(flattened);*/
-    
-    for (size_t i = 0; i < rowCount; i++)
-    {
-        for (size_t j = 0; j < colCount; j++)
-        {
-            //std::cout << i * rowCount + j << " ";
-            flat.push_back(tdv[i][j]);
-        }
-        //std::cout << std::endl;
-    }
-
-
-
-
-
-    return flat;
-    
-}
 cudaError_t MatrixMultCuda(const int* A, const int* B, int* C, size_t numRows, size_t numCols, size_t size)
 {
     int *dev_a = 0;
     int *dev_b = 0;
     int *dev_c = 0;
 
+    dim3 blockDim(16, 16);
 
     cudaError_t status;
 
@@ -155,7 +90,9 @@ cudaError_t MatrixMultCuda(const int* A, const int* B, int* C, size_t numRows, s
     }
 
     //Call
-    dim3 blockDim(16, 16);
+    //Call
+    //Call
+    
 
     matrixMultNaiveKernel <<<16, blockDim >>> (dev_a, dev_b, dev_c, numRows, numCols, size);
 
