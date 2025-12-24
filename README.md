@@ -1,1 +1,1 @@
-A variety of kernels I wrote to explore and becnhmark against the CPU and cuBLAS.
+A variety of kernels I wrote to explore and benchmark against the CPU and cuBLAS.
