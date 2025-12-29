@@ -13,7 +13,13 @@ ROW and COL size are not preserved in matix data so make sure to store before cr
 */
 std::vector<int> generateMatrix(size_t rows, size_t cols, int seed = 1);
 /*
-Used To validate results of Matrix Addition kernal. 
+Used To validate results of Matrix Addition kernel. 
 Should not be included in runtime total used for kernal performance analytics,
 */
 bool validateAdd(const int* inputA, const int* inputB, const int* result, size_t N);
+/*
+Used To Validate Matrix Multiply kernel
+Should not be included in runtime total used for kernal performance analytics,
+Don't use this on Larger Matrices(size tbd) it will take a long time
+*/
+bool validateMultiply(const std::vector<std::vector<int>> A, const std::vector<std::vector<int>> B);

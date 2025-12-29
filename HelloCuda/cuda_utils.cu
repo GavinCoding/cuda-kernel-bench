@@ -70,7 +70,59 @@ bool validateAdd(const int* inputA, const int* inputB, const int* result, size_t
     for (size_t i = 0; i < N; ++i)
     {
         if (result[i] != (inputA[i] + inputB[i]))
+        {
+            std::cout << result[i] << " != " <<inputA[i] << " + "<< inputB[i] << std::endl;
             return false;
+        }
+            
     }
+    return true;
+}
+
+
+//Need To change this to work with flattened inputs
+bool validateMultiply(const std::vector<std::vector<int>> A, const std::vector<std::vector<int>> B)
+{
+    //Imagine we 
+    //For Results
+    size_t rowA = A.size();
+    size_t colB = B[0].size();
+
+    size_t colA = A[0].size();
+    size_t rowB = B.size();
+
+
+    //For Result
+    std::vector< std::vector<int> > C(rowA, std::vector<int>(colB, 0));
+
+
+    if (colA == rowB)
+    {
+        for (int i = 0; i < rowA; i++)
+        {
+            for (int j = 0; j < colB; j++)
+            {
+                for (int k = 0; k < rowB; k++)
+                {
+                    C[i][j] += A[i][k] * B[k][j];
+                }
+            }
+        }
+
+    }
+    else
+    {
+        std::cerr << "Can't Only multiple Maturx of size (nCmR) * (mCoR) ";
+    }
+
+    for (int RowNum = 0; RowNum < rowA; RowNum++)
+    {
+        for (int ColNum = 0; ColNum < colB; ColNum++)
+        {
+            std::cout << C[RowNum][ColNum] << " ";
+        }
+        std::cout << "\n";
+    }
+
     return true;
 }

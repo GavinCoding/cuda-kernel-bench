@@ -20,8 +20,12 @@ cudaError_t CudaAdd(int* A, int* B, int* C, size_t size)
 	int* dev_C = 0;
 
 	//Dimision for Kernal Call
-	dim3 block(16, 16);
-	/*dim3 grid()*/
+	/*
+	I need how many thread per block. Should be divible by 32 as blocks are comprised of warps which are 32 threads each
+	Then I can take the number of threads we need / threads per block and that gives us the number of blocks we need
+	*/
+	int threadsPerBlock = 256;
+	int blocks = ((size + threadsPerBlock - 1) / threadsPerBlock);
 
 	// Return code singleton for error checking
 	cudaError_t results = cudaSuccess;
@@ -67,7 +71,7 @@ cudaError_t CudaAdd(int* A, int* B, int* C, size_t size)
 
 
 	//Call Kernel with 16 blocks and 16 threads per block. 
-	cudaAddKernal << <16, block >> > (dev_A, dev_B, dev_C, size);
+	cudaAddKernal <<< blocks,threadsPerBlock >>> (dev_A, dev_B, dev_C, size);
 
 	//Check for errors from Kernal Launch
 	results = cudaGetLastError();
