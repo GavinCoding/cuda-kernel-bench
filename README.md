@@ -8,7 +8,10 @@ A variety of kernels written to explore performance characteristics and benchmar
 
 ## Performance and Analytics
 This project emphasizes quantitative performance analysis. Kernels are evaluated across multiple dimensions, including execution time, speedup relative to CPU baselines, and the impact of launch configuration and memory access patterns. As optimizations are introduced, results are compared against prior implementations to highlight measurable performance gains.
-
+### Matrix generation
+Matrices are generated using a Mersenne Twister pseudo-random number generator (std::mt19937) and initially represented as std::vector<std::vector<int>> on the host.
+The data is then flattened into a contiguous one-dimensional buffer and copied to device memory for CUDA kernel execution.
+Benchmarks use matrices larger than 10⁶ elements to ensure kernel execution dominates fixed overhead costs and to more accurately reflect computational efficiency.
 ## Implementation Highlights
 - Incremental kernel development, starting from naive implementations and progressing toward optimized versions  
 - Exploration of kernel launch dimensions and their impact on occupancy and throughput  
