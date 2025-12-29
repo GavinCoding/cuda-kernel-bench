@@ -1,6 +1,9 @@
 //Converts 2d Vector into 1d array
 #include "cuda_utils.h"
 #include <iostream>     //for std::cerr;
+#include <random>
+
+
 
 std::vector<int> flatten(const std::vector< std::vector<int> >& tdv)
 {
@@ -47,4 +50,27 @@ std::vector<int> flatten(const std::vector< std::vector<int> >& tdv)
 
     return flat;
 
+}
+std::vector<int> generateMatrix(size_t rows, size_t cols, int seed)
+{
+    std::vector<int>  Matrix(rows*cols);
+
+    std::mt19937 rng(seed);
+    std::uniform_int_distribution<int> dist(0, 10);
+
+    for (size_t i = 0; i < rows*cols; ++i)
+    {
+        
+         Matrix[i] = dist(rng);
+    }
+    return Matrix;
+}
+bool validateAdd(const int* inputA, const int* inputB, const int* result, size_t N)
+{
+    for (size_t i = 0; i < N; ++i)
+    {
+        if (result[i] != (inputA[i] + inputB[i]))
+            return false;
+    }
+    return true;
 }
