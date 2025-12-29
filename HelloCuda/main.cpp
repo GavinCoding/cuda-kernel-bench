@@ -1,5 +1,6 @@
 #include "cuda_utils.h"
 #include "matrix_mul.h"
+#include "matrix_add.h"
 
 #include <vector>
 #include <iostream>
@@ -20,20 +21,34 @@ int main() {
         {3,6,7,12,3}
     };
 
+    std::vector< std::vector<int> > D =
+    {
+        {1,2,3},
+        {4,5,6},
+        {7,8,9},
+        {10,11,12},
+        {13,14,15}
+    };
+
     std::vector<int> A_flat = flatten(A);
     std::vector<int> B_flat = flatten(B);
+    std::vector<int> D_flat = flatten(D);
 
-    int cSize = A.size() * B[0].size();
+    ////For Mult
+    //int cSize = A.size() * B[0].size();
+    //int* C = new int[cSize]
+    //MatrixMultCuda(A_flat.data(), B_flat.data(), C, A.size(), B[0].size(), A[0].size());
+
+    //For Add
+    int cSize = A_flat.size();
     int* C = new int[cSize];
 
-
-
-    MatrixMultCuda(A_flat.data(), B_flat.data(), C, A.size(), B[0].size(), A[0].size());
+    CudaAdd(A_flat.data(), D_flat.data(), C, A_flat.size());
 
     for (int i = 0; i < cSize; i++)
     {
         std::cout << C[i] << " ";
-        if ((i + 1) % (B[0].size()) == 0)
+        if ((i + 1) % (A[0].size()) == 0)
             std::cout << std::endl;
     }
     delete[] C;

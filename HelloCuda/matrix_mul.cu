@@ -85,7 +85,7 @@ cudaError_t MatrixMultCuda(const int* A, const int* B, int* C, size_t numRows, s
     //Call
 
 
-    matrixMultNaiveKernel << <16, blockDim >> > (dev_a, dev_b, dev_c, numRows, numCols, size);
+    matrixMultNaiveKernel <<<16, blockDim >>> (dev_a, dev_b, dev_c, numRows, numCols, size);
 
     //Check for errors from Kernal Launch
     status = cudaGetLastError();
