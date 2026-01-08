@@ -5,7 +5,7 @@
 
 
 
-std::vector<int> flatten(const std::vector< std::vector<int> >& tdv)
+std::vector<float> flatten(const std::vector< std::vector<float> >& tdv)
 {
     if (tdv.empty()) {
         std::cerr << "flatten(): input has no rows\n";
@@ -32,7 +32,7 @@ std::vector<int> flatten(const std::vector< std::vector<int> >& tdv)
     }
 
 
-    std::vector<int> flat(rowCount * colCount);
+    std::vector<float> flat(rowCount * colCount);
     /*  std::cout << sizeof(flattened);*/
 
     size_t idx = 0;
@@ -51,9 +51,9 @@ std::vector<int> flatten(const std::vector< std::vector<int> >& tdv)
     return flat;
 
 }
-std::vector<int> generateMatrix(size_t rows, size_t cols, int seed)
+std::vector<float> generateMatrix(size_t rows, size_t cols, int seed)
 {
-    std::vector<int>  Matrix(rows*cols);
+    std::vector<float>  Matrix(rows*cols);
 
     std::mt19937 rng(seed);
     std::uniform_int_distribution<int> dist(0, 10);
@@ -61,11 +61,11 @@ std::vector<int> generateMatrix(size_t rows, size_t cols, int seed)
     for (size_t i = 0; i < rows*cols; ++i)
     {
         
-         Matrix[i] = dist(rng);
+         Matrix[i] = (float)dist(rng);
     }
     return Matrix;
 }
-bool validateAdd(const int* inputA, const int* inputB, const int* result, size_t N)
+bool validateAdd(const float* inputA, const float* inputB, const float* result, size_t N)
 {
     for (size_t i = 0; i < N; ++i)
     {
@@ -80,49 +80,29 @@ bool validateAdd(const int* inputA, const int* inputB, const int* result, size_t
 }
 
 
-//Need To change this to work with flattened inputs
-bool validateMultiply(const std::vector<std::vector<int>> A, const std::vector<std::vector<int>> B)
+
+bool validateMultiply(const float* inputA, const float* inputB, const float* inputC, size_t aRows, size_t inner, size_t bCols)
 {
-    //Imagine we 
-    //For Results
-    size_t rowA = A.size();
-    size_t colB = B[0].size();
-
-    size_t colA = A[0].size();
-    size_t rowB = B.size();
-
-
-    //For Result
-    std::vector< std::vector<int> > C(rowA, std::vector<int>(colB, 0));
-
-
-    if (colA == rowB)
+   //Slow multiply A and B and check if it is equal to C
+    
+    float sum = 0;
+    //Rows of A
+    for (int rows = 0; rows < aRows; ++rows)
     {
-        for (int i = 0; i < rowA; i++)
+        //Cols of B
+        for (int cols = 0; cols < bCols; ++cols)
         {
-            for (int j = 0; j < colB; j++)
+            //Inner number of nums within each row of A and Col of B 
+            for (int N = 0; N < inner; ++N)
             {
-                for (int k = 0; k < rowB; k++)
-                {
-                    C[i][j] += A[i][k] * B[k][j];
-                }
+                sum += inputA[rows * inner + N] * inputB[N * bCols + cols];
             }
+            if ((int)inputC[rows * bCols + cols] != (int)sum)
+                return false;
+            sum = 0;
+
         }
 
     }
-    else
-    {
-        std::cerr << "Can't Only multiple Maturx of size (nCmR) * (mCoR) ";
-    }
-
-    for (int RowNum = 0; RowNum < rowA; RowNum++)
-    {
-        for (int ColNum = 0; ColNum < colB; ColNum++)
-        {
-            std::cout << C[RowNum][ColNum] << " ";
-        }
-        std::cout << "\n";
-    }
-
     return true;
 }

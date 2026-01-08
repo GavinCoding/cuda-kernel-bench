@@ -3,37 +3,32 @@
 #include <iostream>
 
 
-__global__ void matrixMultNaiveKernel(const int* A, const int* B, int* C, size_t numRows, size_t numCols, size_t size)
+__global__ void matrixMultNaiveKernel(const float* A, const float* B, float* C, size_t aRows, size_t inner, size_t bCols)
 {
     int row_index = blockIdx.y * blockDim.y + threadIdx.y;
     int col_index = blockIdx.x * blockDim.x + threadIdx.x;
 
 
 
-    if (col_index < numCols && row_index < numRows)
+    if (col_index < bCols && row_index < aRows)
     {
-        int sum = 0;
-
-        for (int i = 0; i < size; i++)
+        float sum = 0;
+     
+        for (int i = 0; i < inner; i++)
         {
-            sum += A[row_index * size + i] * B[col_index + (i * numCols)];
+            sum += A[row_index * inner + i] * B[col_index + (i * bCols)];
         }
-
-        C[row_index * numRows + col_index] = sum;
-
-
-
-
+     
+        C[row_index * aRows + col_index] = sum;
+     
     }
     else
         return; //thread is out of bound
 
-
-
-
 }
 
-__global__ void matMulTiled(const int* A, const int* B, int* C, size_t size)
+
+__global__ void matMulTiled(const float* A, const float* B, float* C, size_t aRows, size_t inner, size_t bCols)
 {
     //Indexing variables
     int bx = blockIdx.x;
@@ -50,63 +45,74 @@ __global__ void matMulTiled(const int* A, const int* B, int* C, size_t size)
 
 
     //Split data into tiles
-    // Tile Size is block size
-    // We are storing parts of matrix A and B that are needed for calulation
-    __shared__ float aShared[2][2];
-    __shared__ float bShared[2][2];
+    //Tile Size is block size
+    //We are storing parts of matrix A and B that are needed for calulation
+    __shared__ float aShared[TILESIZE][TILESIZE];
+    __shared__ float bShared[TILESIZE][TILESIZE];
 
     float value = 0;
+    //int solSize;
+
     //load tiles into shared memory
-    for (int t = 0; t < size / 2; t++)
+    for (int t = 0; t < ceil((float)inner / TILESIZE); t++)
     {
-        //Load tile from global
-        aShared[ty][tx] = A[(i * size) + (t * 2) + tx];
-        //j is the co
-        bShared[ty][tx] = B[((t * 2 + ty) * size) + j];
-
-
+        //Load tile from global after bounds checking
+        if ((i < aRows) && ((t * TILESIZE + tx) < inner))
+            aShared[ty][tx] = A[(i * inner) + (t * TILESIZE) + tx];
+        else
+            aShared[ty][tx] = 0.0f;
+        //
+        if(j < bCols && ((t * TILESIZE + ty) < inner))
+            bShared[ty][tx] = B[((t * TILESIZE + ty) * bCols) + j];
+        else
+            bShared[ty][tx] = 0.0f;
+     
+     
         
         //sync so that relevant tiles are complete
         __syncthreads();
-
+        
         //dot product of a and b tiles
-        for (int j = 0; j < 2; j++)
+        for (int j = 0; j < TILESIZE; j++)
         {
             value += aShared[ty][j] * bShared[j][tx];
         }
         __syncthreads();
         //inside K
     }
-    C[i*size + j] = value; 
+    if ((i < aRows) && (j < bCols))
+    {
+        C[i * bCols + j] = value;
+    }
 }
 
-cudaError_t MatrixMultCuda(const int* A, const int* B, int* C, size_t numRows, size_t numCols, size_t size)
+cudaError_t MatrixMultCuda(const float* A, const float* B, float* C, size_t aRows, size_t inner, size_t bCols)
 {
-    int* dev_a = 0;
-    int* dev_b = 0;
-    int* dev_c = 0;
+    float* dev_a = 0;
+    float* dev_b = 0;
+    float* dev_c = 0;
 
     dim3 threadsPerBlock(TILESIZE, TILESIZE);
-    dim3 blocksPerGrid(size / 2, size / 2);
+    dim3 blocksPerGrid(aRows* bCols / 2, aRows * bCols / 2);
 
     cudaError_t status;
 
     //Allocated Memory on GPU (DEVICE)
-    status = cudaMalloc((void**)&dev_a, (numRows * size * sizeof(int)));
+    status = cudaMalloc((void**)&dev_a, (aRows * inner * sizeof(float)));
     if (status != cudaSuccess)
     {
         std::cerr << "Malloc Failed A";
         goto Error;
     }
 
-    status = cudaMalloc((void**)&dev_b, (size * numCols * sizeof(int)));
+    status = cudaMalloc((void**)&dev_b, (bCols * inner * sizeof(float)));
     if (status != cudaSuccess)
     {
         std::cerr << "Malloc Failed B";
         goto Error;
     }
 
-    status = cudaMalloc((void**)&dev_c, numRows * numCols * sizeof(int));
+    status = cudaMalloc((void**)&dev_c, (aRows * bCols * sizeof(float)));
     if (status != cudaSuccess)
     {
         std::cerr << "Malloc Failed C";
@@ -114,14 +120,14 @@ cudaError_t MatrixMultCuda(const int* A, const int* B, int* C, size_t numRows, s
     }
 
     //Copy Memory from host to Device. A and B only
-    status = cudaMemcpy(dev_a, A, numRows * size * sizeof(int), cudaMemcpyHostToDevice);
+    status = cudaMemcpy(dev_a, A, aRows * inner * sizeof(float), cudaMemcpyHostToDevice);
     if (status != cudaSuccess)
     {
         std::cerr << "H->D MemCpy Failed w/ A";
         goto Error;
     }
 
-    status = cudaMemcpy(dev_b, B, size * numCols * sizeof(int), cudaMemcpyHostToDevice);
+    status = cudaMemcpy(dev_b, B, inner * bCols * sizeof(float), cudaMemcpyHostToDevice);
     if (status != cudaSuccess)
     {
         std::cerr << "H->D MemCpy Failed w/ B";
@@ -139,7 +145,9 @@ cudaError_t MatrixMultCuda(const int* A, const int* B, int* C, size_t numRows, s
         dev_a,
         dev_b,
         dev_c,
-        size
+        aRows,
+        inner,
+        bCols
         );
 
     //Check for errors from Kernal Launch
@@ -165,7 +173,7 @@ cudaError_t MatrixMultCuda(const int* A, const int* B, int* C, size_t numRows, s
 
 
     //Copy C back to Host
-    status = cudaMemcpy(C, dev_c, numCols * numRows * sizeof(int), cudaMemcpyDeviceToHost);
+    status = cudaMemcpy(C, dev_c, bCols * aRows * sizeof(float), cudaMemcpyDeviceToHost);
     if (status != cudaSuccess)
     {
         std::cerr << "D->H cudaMemcpy Failed for resulting Matrix C";
