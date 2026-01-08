@@ -4,30 +4,55 @@
 
 #include <vector>
 #include <iostream>
+
 int main() {
 
-    size_t numRows{ 100 };
-    size_t numCols{ 100 };
+    constexpr size_t size = 4;  // square matrix (10x10)
+    constexpr int tileSize = TILESIZE;
 
+    std::vector<int> A = generateMatrix(size, size, 1);
+    std::vector<int> B = generateMatrix(size, size, 1);
 
+    std::vector<int> C(size * size, 0);
 
-    std::vector<int> A = generateMatrix(numRows, numCols, 1);
-    std::vector<int> B = generateMatrix(numRows, numCols, 1);
+    // Run tiled matrix multiplication
+    cudaError_t result = MatrixMultCuda(
+        A.data(),
+        B.data(),
+        C.data(),
+        size,
+        size,
+        size
+    );
 
-
-    //For Add
-    int cSize = numRows * numCols;
-    int* C = new int[cSize];
-
-    CudaAdd(A.data(), B.data(), C, A.size());
-
-    
-    if (!validateAdd(A.data(), B.data(), C, numRows * numCols))
-    {
-        std::cerr << "ADD KERNEL FAILED";
+    if (result != cudaSuccess) {
+        std::cerr << "Matrix multiply kernel failed: "
+            << cudaGetErrorString(result) << "\n";
+        return 1;
     }
 
-    delete[] C;
-    return 0;
+    // Optional: print a small section to verify visually
+    std::cout << "A:\n";
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            std::cout << A[i * size + j] << " ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n\nB:\n";
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            std::cout << B[i * size + j] << " ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n\nC:\n";
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            std::cout << C[i * size + j] << " ";
+        }
+        std::cout << "\n";
+    }
 
+    return 0;
 }
