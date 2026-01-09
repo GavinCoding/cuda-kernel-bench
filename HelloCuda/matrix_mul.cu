@@ -50,7 +50,7 @@ __global__ void matMulTiled(const float* A, const float* B, float* C, size_t aRo
     __shared__ float aShared[TILESIZE][TILESIZE];
     __shared__ float bShared[TILESIZE][TILESIZE];
 
-    float value = 0;
+    double value = 0;
     //int solSize;
 
     //load tiles into shared memory
@@ -88,6 +88,14 @@ __global__ void matMulTiled(const float* A, const float* B, float* C, size_t aRo
 
 cudaError_t MatrixMultCuda(const float* A, const float* B, float* C, size_t aRows, size_t inner, size_t bCols)
 {
+    //Timing stuff
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    //Measure elapsed time in Kernel in milliseconds
+    float ms = 0.0f;
+
     float* dev_a = 0;
     float* dev_b = 0;
     float* dev_c = 0;
@@ -135,13 +143,23 @@ cudaError_t MatrixMultCuda(const float* A, const float* B, float* C, size_t aRow
         goto Error;
     }
 
-    //Call
-    //Call
-    //Call
-
+    //Start timing event
+    status = cudaEventRecord(start, cudaEventRecordDefault);
+    if (status != cudaSuccess)
+    {
+        std::cerr << "Start Event Record failed";
+        //goto Error;
+    }
 
    
-
+    /*matrixMultNaiveKernel << <blocksPerGrid, threadsPerBlock >> > (
+        dev_a,
+        dev_b,
+        dev_c,
+        aRows,
+        inner,
+        bCols
+        );*/
     matMulTiled << <blocksPerGrid, threadsPerBlock >> > (
         dev_a,
         dev_b,
@@ -169,9 +187,24 @@ cudaError_t MatrixMultCuda(const float* A, const float* B, float* C, size_t aRow
         std::cerr << "Syncronize failed";
         goto Error;
     }
+    
 
+    //Eveyrthing is finished so we can Get stop time
+    status = cudaEventRecord(stop, cudaEventRecordDefault);
+    if (status != cudaSuccess)
+    {
+        std::cerr << "Stop Event Record failed";
+        //goto Error;
+    }else
+    {
+        cudaEventSynchronize(stop);
+        cudaEventElapsedTime(&ms, start, stop);
 
-
+        std::cout << "Elapsed time is :  " << ms << std::endl;
+    }
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+    //Print Error
 
     //Copy C back to Host
     status = cudaMemcpy(C, dev_c, bCols * aRows * sizeof(float), cudaMemcpyDeviceToHost);
@@ -187,5 +220,6 @@ Error:
     cudaFree(dev_a);
     cudaFree(dev_b);
 
+ 
     return status;
 }

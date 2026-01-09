@@ -1,7 +1,7 @@
 #pragma once
 #include <device_launch_parameters.h>
 #include <cuda_runtime.h>
-#define TILESIZE 2
+#define TILESIZE 20
 /*
 *  MATRIX MULTIPLE NAIVE KERNAL. Multiplies Matrixes represented as Row-Major flattened arrays.
 *  A*B = C. numRows is how many Rows in C which is the same as the number of rows in A. numCols is the Number of Columns in C and its the same as the number of Cols in B
