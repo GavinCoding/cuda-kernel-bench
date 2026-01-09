@@ -93,7 +93,8 @@ cudaError_t MatrixMultCuda(const float* A, const float* B, float* C, size_t aRow
     float* dev_c = 0;
 
     dim3 threadsPerBlock(TILESIZE, TILESIZE);
-    dim3 blocksPerGrid(aRows* bCols / 2, aRows * bCols / 2);
+    
+    dim3 blocksPerGrid( (bCols + TILESIZE - 1) / TILESIZE , ( (aRows + TILESIZE - 1) / TILESIZE) );
 
     cudaError_t status;
 
