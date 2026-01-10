@@ -1,105 +1,60 @@
 #include "cuda_utils.h"
-#include "matrix_mul.h"
+
+
 #include "matrix_add.h"
+#include "matrix_mul_naive.h"
+#include "matrix_mul_tiled.h"
+
 #include <iomanip>
 
 #include <vector>
 #include <iostream>
 
 int main() {
-    
-    int numSamples = 10;
+    const int aRows = 1256;
+    const int aCols = 3567;
+    const int bRows = 3567;
+    const int bCols = 2894;
 
-    constexpr size_t size = 4;  // square matrix (10x10)
-    constexpr int tileSize = TILESIZE;
+    //Generate Input Matrices
+    std::vector<float> A = generateMatrix(aRows, aCols, 1);
+    std::vector<float> B = generateMatrix(bRows, bCols, 2);
 
+    //Make Result Matrix
+    std::vector<float> C(aRows * bCols, 0);
 
-    const int aRows = 1000;
-    const int aCols = 1000;
-    const int bRows = 1000;
-    const int bCols = 1000;
-
-    bool isBig = false;
-    bool success;
-
-    if ((size_t)((size_t)(aRows * bCols)) * bRows > 1000000)
-    {
-        isBig = true;
-    }
+    //Result times
+    float NaiveRes = 0.0f;
+    float TiledRes = 0.0f;
 
     if (aCols != bRows)
     {
         std::cerr << "Matrices A and B are not Compatible for multiplication.";
     }
     
-
-    std::vector<float> A = generateMatrix(aRows, aCols, 1);
-    std::vector<float> B = generateMatrix(bRows, bCols, 2);
-
-    std::vector<float> C(aRows * bCols, 0);
-
-    // Run tiled matrix multiplication
-
-    for (int i = 0; i < numSamples; i++)
-    {
-        cudaError_t result = MatrixMultCuda(
-            A.data(),
-            B.data(),
-            C.data(),
-            aRows,
-            aCols,
-            bCols
-        );
-
-
-        if (result != cudaSuccess) {
-            std::cerr << "Matrix multiply kernel failed: "
-                << cudaGetErrorString(result) << "\n";
-            return 1;
-        }
-        /*std::vector<float> A = generateMatrix(aRows, aCols, 1+ i);
-        std::vector<float> B = generateMatrix(bRows, bCols, 2 + i);*/
-        //cudaDeviceSynchronize();
-    }
+    NaiveRes = MatrixMultNaiveCuda(
+        A.data(),
+        B.data(),
+        C.data(),
+        aRows,
+        aCols,
+        bCols
+    );
     
 
-
-    //If it's not too big we can Print and check if it's valid
-    //if (!isBig)
-    //{
-    //    //if it's small and not valid Don't print
-    //    if (!validateMultiply(A.data(), B.data(), C.data(), aRows, aCols, bCols))
-    //    {
-    //        std::cout << "\nMATMUL RESULT INCORRECT\n";
-    //    }
-    //    else
-    //    {
-    //        // Optional: print a small section to verify visually
-    //        std::cout << "A:\n";
-    //        for (int i = 0; i < aRows; ++i) {
-    //            for (int j = 0; j < aCols; ++j) {
-    //                std::cout << std::setw(3) << A[i * aCols + j] << " ";
-    //            }
-    //            std::cout << "\n";
-    //        }
-    //        std::cout << "\n\nB:\n";
-    //        for (int i = 0; i < bRows; ++i) {
-    //            for (int j = 0; j < bCols; ++j) {
-    //                std::cout << std::setw(3) << B[i * bCols + j] << " ";
-    //            }
-    //            std::cout << "\n";
-    //        }
-    //        std::cout << "\n\nC:\n";
-    //        for (int i = 0; i < aRows; ++i) {
-    //            for (int j = 0; j < bCols; ++j) {
-    //                std::cout << std::setw(4) << C[i * aRows + j] << " ";
-    //            }
-    //            std::cout << "\n";
-    //        }
-    //    }
-    //}
-    
+    TiledRes = MatrixMultTiledCuda(
+        A.data(),
+        B.data(),
+        C.data(),
+        aRows,
+        aCols,
+        bCols
+    );
    
 
+    std::cout << "GPU-TIME MATMUL      NAIVE:  " << NaiveRes << std::endl;
+    std::cout << "GPU-Time MatMul      TILED:  " << TiledRes << std::endl;
+
+  
     return 0;
 }

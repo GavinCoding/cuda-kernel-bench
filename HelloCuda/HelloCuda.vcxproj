@@ -82,16 +82,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="cuda_utils.cu" />
+    <CudaCompile Include="matrix_mul_tiled.cu" />
     <CudaCompile Include="matrix_add.cu" />
-    <CudaCompile Include="matrix_mul.cu" />
+    <CudaCompile Include="matrix_mul_naive.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cuda_utils.h" />
+    <ClInclude Include="matrix_mul_tiled.h" />
     <ClInclude Include="matrix_add.h" />
-    <ClInclude Include="matrix_mul.h" />
+    <ClInclude Include="matrix_mul_naive.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
