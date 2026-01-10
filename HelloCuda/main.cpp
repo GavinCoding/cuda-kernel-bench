@@ -11,6 +11,7 @@
 #include <iostream>
 
 int main() {
+
     const int aRows = 1256;
     const int aCols = 3567;
     const int bRows = 3567;
@@ -23,37 +24,51 @@ int main() {
     //Make Result Matrix
     std::vector<float> C(aRows * bCols, 0);
 
-    //Result times
-    float NaiveRes = 0.0f;
-    float TiledRes = 0.0f;
+    //Testing
+    std::vector<float> NaiveRes;
+    std::vector<float> TiledRes;
+    int numSamples = 5;
 
     if (aCols != bRows)
     {
         std::cerr << "Matrices A and B are not Compatible for multiplication.";
     }
     
-    NaiveRes = MatrixMultNaiveCuda(
-        A.data(),
-        B.data(),
-        C.data(),
-        aRows,
-        aCols,
-        bCols
-    );
+    float naiveSum = 0.0f;
+    float tiledSum = 0.0f;
+
+    for (int i = 0; i < numSamples; i++)
+    {
+        NaiveRes.push_back(MatrixMultNaiveCuda(
+            A.data(),
+            B.data(),
+            C.data(),
+            aRows,
+            aCols,
+            bCols
+        ));
+        
+
+        TiledRes.push_back(MatrixMultTiledCuda(
+            A.data(),
+            B.data(),
+            C.data(),
+            aRows,
+            aCols,
+            bCols
+        ));
+
+        naiveSum += NaiveRes[i];
+        tiledSum += TiledRes[i];
+    }
     
+    std::cout << "AVG. GPU-Time MatMul      NAIVE:  " << naiveSum / numSamples << std::endl;
+    std::cout << "AVG. GPU-Time MatMul      TILED:  " << tiledSum / numSamples << std::endl;
 
-    TiledRes = MatrixMultTiledCuda(
-        A.data(),
-        B.data(),
-        C.data(),
-        aRows,
-        aCols,
-        bCols
-    );
+    std::cout << (naiveSum) / (tiledSum) << "x speedup from Tiled to Naive" << std::endl;;
+    
+ 
    
-
-    std::cout << "GPU-TIME MATMUL      NAIVE:  " << NaiveRes << std::endl;
-    std::cout << "GPU-Time MatMul      TILED:  " << TiledRes << std::endl;
 
   
     return 0;
