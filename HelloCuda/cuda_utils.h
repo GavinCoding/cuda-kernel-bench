@@ -1,5 +1,22 @@
 #pragma once
+#include <device_launch_parameters.h>
+#include <cuda_runtime.h>
 #include <vector>
+
+#define CudaStatusCheck(Status,Msg) {if(Status != cudaSuccess){std::cout<<Msg << " "<< cudaGetErrorString(Status) << "\nIn file: " << __FILE__ << "\nOn line number: " << __LINE__;goto Error;}}
+
+//struct for holding MatMul memory and execution state
+struct CudaMatMulHandle
+{
+    float* dev_a;
+    float* dev_b;
+    float* dev_c;
+
+    size_t aRows;
+    size_t inner;
+    size_t bCols;
+};
+
 
 /*
 Converts a 2d vector into a row - major 1d Vector.
@@ -24,3 +41,21 @@ Should not be included in runtime total used for kernal performance analytics,
 Don't use this on Larger Matrices(size tbd) it will take a long time
 */
 bool validateMultiply(const float* inputA, const float* inputB, const float* inputC, size_t aRows, size_t inner, size_t bCols);
+
+//Resource Allocators and Managers
+
+/*
+* Creates Context for MatMul Operations
+* Used for Allocating the proper amount of device Memory and error checking along the way
+*/
+cudaError_t createMatMulContext(CudaMatMulHandle& context, size_t aRows, size_t inner, size_t bCols);
+/*
+* Fills Device Memory with Inputs (Host->Device)
+*/
+cudaError_t copyMatMalInputsToDevice(CudaMatMulHandle& context, const float* host_A, const float* host_B);
+/*
+* Copies Results back to Host Memory 
+*/
+cudaError_t copyMatMulOutputToHost(CudaMatMulHandle& context, float* host_C);
+
+void destroyMatMulContext(CudaMatMulHandle& ctx);

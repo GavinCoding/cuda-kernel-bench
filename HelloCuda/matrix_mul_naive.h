@@ -1,6 +1,8 @@
 #pragma once
 #include <device_launch_parameters.h>
 #include <cuda_runtime.h>
+#include "cuda_utils.h"
+
 #define BLOCKWIDTH 32
 /*
 *  MATRIX MULTIPLE NAIVE KERNAL. Multiplies Matrixes represented as Row-Major flattened arrays.
@@ -8,4 +10,4 @@
 *  Size Represents the number of Cols in A and the number of Rows in B
 */
 __global__ void MultiplyNaive(const float* A, const float* B, float* C, size_t aRows, size_t inner, size_t bCols);
-float MatrixMultNaiveCuda(const float* A, const float* B, float* C, size_t aRows, size_t inner, size_t bCols);
+float MatrixMultNaiveCuda(CudaMatMulHandle& context);

@@ -4,7 +4,6 @@
 #include <random>
 
 
-
 std::vector<float> flatten(const std::vector< std::vector<float> >& tdv)
 {
     if (tdv.empty()) {
@@ -106,3 +105,90 @@ bool validateMultiply(const float* inputA, const float* inputB, const float* inp
     }
     return true;
 }
+
+
+
+
+cudaError_t createMatMulContext(CudaMatMulHandle& context, size_t aRows, size_t inner, size_t bCols)
+{
+    
+    cudaError_t status;
+    context.dev_a = 0;
+    context.dev_b = 0;
+    context.dev_c = 0;
+    context.aRows = aRows;
+    context.inner = inner;
+    context.bCols = bCols;
+    //Allocated Memory on GPU (DEVICE)
+    status = cudaMalloc((void**)&context.dev_a, (aRows * inner * sizeof(float)));
+    CudaStatusCheck(status, "Malloc Failed A");
+
+
+    status = cudaMalloc((void**)&context.dev_b, (bCols * inner * sizeof(float)));
+    CudaStatusCheck(status, "Malloc Failed B");
+
+    status = cudaMalloc((void**)&context.dev_c, (aRows * bCols * sizeof(float)));
+    CudaStatusCheck(status, "Malloc Failed C");
+
+   
+
+
+
+Error:
+    return status;
+}
+
+
+/*
+* //Allocated Memory on GPU (DEVICE)
+    status = cudaMalloc((void**)&context.dev_a, (context.aRows * context.inner * sizeof(float)));
+    CudaStatusCheck(status, "Malloc Failed A");
+
+
+    status = cudaMalloc((void**)&context.dev_b, (context.bCols * context.inner * sizeof(float)));
+    CudaStatusCheck(status, "Malloc Failed B");
+
+    status = cudaMalloc((void**)&context.dev_c, (context.aRows * context.bCols * sizeof(float)));
+    CudaStatusCheck(status, "Malloc Failed C");
+
+    //Copy Memory from host to Device. A and B only
+    status = cudaMemcpy(dev_a, A, aRows * inner * sizeof(float), cudaMemcpyHostToDevice);
+    CudaStatusCheck(status, "H->D MemCpy Failed w / A");
+
+
+    status = cudaMemcpy(dev_b, B, inner * bCols * sizeof(float), cudaMemcpyHostToDevice);
+    CudaStatusCheck(status, "H->D MemCpy Failed w/ B");
+*/
+cudaError_t copyMatMalInputsToDevice(CudaMatMulHandle& context, const float* host_A, const float* host_B)
+{
+    cudaError_t status;
+    //Copy Memory from host to Device. A and B only
+    status = cudaMemcpy(context.dev_a, host_A, context.aRows * context.inner * sizeof(float), cudaMemcpyHostToDevice);
+    CudaStatusCheck(status, "H->D MemCpy Failed input A   --> ");
+
+    status = cudaMemcpy(context.dev_b, host_B, context.inner * context.bCols * sizeof(float), cudaMemcpyHostToDevice);
+    CudaStatusCheck(status, "H->D MemCpy Failed input B  --> ");
+
+Error:
+    return status;
+}
+
+cudaError_t copyMatMulOutputToHost(CudaMatMulHandle& context,float* host_C)
+{
+    cudaError_t status;
+    //Copy C back to Host
+
+    status = cudaMemcpy(host_C, context.dev_c, context.bCols * context.aRows * sizeof(float), cudaMemcpyDeviceToHost);
+    CudaStatusCheck(status, "D->H cudaMemcpy Failed for resulting Matrix C");
+
+Error:
+    return status;
+}
+void destroyMatMulContext(CudaMatMulHandle& context)
+{
+    cudaFree(context.dev_c);
+    cudaFree(context.dev_a);
+    cudaFree(context.dev_b);
+    return;
+}
+//cudaError_t free

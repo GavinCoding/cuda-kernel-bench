@@ -1,6 +1,5 @@
 #include "cuda_utils.h"
 
-
 #include "matrix_add.h"
 #include "matrix_mul_naive.h"
 #include "matrix_mul_tiled.h"
@@ -37,30 +36,31 @@ int main() {
     float naiveSum = 0.0f;
     float tiledSum = 0.0f;
 
+    cudaError_t status;
+
+    CudaMatMulHandle context{};
+
+    status = createMatMulContext(context, aRows, aCols, bCols);
+    CudaStatusCheck(status, "createMatMulContext Failed ->");
+
+
+    status = copyMatMalInputsToDevice(context, A.data(), B.data());
+    CudaStatusCheck(status, "copyMatMalInputsToDevice Failed ->");
+
     for (int i = 0; i < numSamples; i++)
     {
-        NaiveRes.push_back(MatrixMultNaiveCuda(
-            A.data(),
-            B.data(),
-            C.data(),
-            aRows,
-            aCols,
-            bCols
-        ));
-        
 
-        TiledRes.push_back(MatrixMultTiledCuda(
-            A.data(),
-            B.data(),
-            C.data(),
-            aRows,
-            aCols,
-            bCols
-        ));
+
+        NaiveRes.push_back(MatrixMultNaiveCuda(context));
+        TiledRes.push_back(MatrixMultTiledCuda(context));
 
         naiveSum += NaiveRes[i];
         tiledSum += TiledRes[i];
     }
+
+   
+
+    
     
     std::cout << "AVG. GPU-Time MatMul      NAIVE:  " << naiveSum / numSamples << std::endl;
     std::cout << "AVG. GPU-Time MatMul      TILED:  " << tiledSum / numSamples << std::endl;
@@ -68,8 +68,9 @@ int main() {
     std::cout << (naiveSum) / (tiledSum) << "x speedup from Tiled to Naive" << std::endl;;
     
  
-   
-
   
+Error:
+   
+    destroyMatMulContext(context);
     return 0;
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "cuda_utils.h"
 
 #include <device_launch_parameters.h>
 #include <cuda_runtime.h>
@@ -12,5 +13,4 @@
 *	Result C will have aRows rows and bCols cols
 */
 __global__ void matMulTiled(const float* A, const float* B, float* C, size_t aRows, size_t inner, size_t bCols);
-
-float MatrixMultTiledCuda(const float* A, const float* B, float* C, size_t numRows, size_t numCols, size_t size);
+float MatrixMultTiledCuda(CudaMatMulHandle& context);

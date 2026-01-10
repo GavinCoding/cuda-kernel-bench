@@ -1,8 +1,6 @@
 #include "matrix_mul_naive.h"
 #include <iostream>
 
-#define CudaStatusCheck(Status,Msg) {if(Status != cudaSuccess){std::cout<<Msg << " "<< cudaGetErrorString(Status) << "\nIn file: " << __FILE__ << "\nOn line number: " << __LINE__;goto Error;}}
-
 __global__ void MultiplyNaive(const float* A, const float* B, float* C, size_t aRows, size_t inner, size_t bCols)
 {
     int row_index = blockIdx.y * blockDim.y + threadIdx.y;
@@ -30,7 +28,7 @@ __global__ void MultiplyNaive(const float* A, const float* B, float* C, size_t a
 
 
 
-float MatrixMultNaiveCuda(const float* A, const float* B, float* C, size_t aRows, size_t inner, size_t bCols)
+float MatrixMultNaiveCuda(CudaMatMulHandle& context)
 {
     //Timing stuff
 
@@ -41,48 +39,22 @@ float MatrixMultNaiveCuda(const float* A, const float* B, float* C, size_t aRows
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
 
-    
-
-    float* dev_a = 0;
-    float* dev_b = 0;
-    float* dev_c = 0;
-
     dim3 threadsPerBlock(BLOCKWIDTH, BLOCKWIDTH, 1);
-    dim3 blocksPerGrid(ceil(bCols / (float)BLOCKWIDTH), ceil(aRows / (float)BLOCKWIDTH), 1);
-    //dim3 blocksPerGrid( (bCols + BLOCKWIDTH - 1) / BLOCKWIDTH , ( (aRows + BLOCKWIDTH - 1) / BLOCKWIDTH) );
+    dim3 blocksPerGrid( (context.bCols + BLOCKWIDTH - 1) / BLOCKWIDTH , ( (context.aRows + BLOCKWIDTH - 1) / BLOCKWIDTH) );
 
     cudaError_t status;
-
-    //Allocated Memory on GPU (DEVICE)
-    status = cudaMalloc((void**)&dev_a, (aRows * inner * sizeof(float)));
-    CudaStatusCheck(status, "Malloc Failed A");
-
-
-    status = cudaMalloc((void**)&dev_b, (bCols * inner * sizeof(float)));
-    CudaStatusCheck(status, "Malloc Failed B");
-
-    status = cudaMalloc((void**)&dev_c, (aRows * bCols * sizeof(float)));
-    CudaStatusCheck(status, "Malloc Failed C");
-
-    //Copy Memory from host to Device. A and B only
-    status = cudaMemcpy(dev_a, A, aRows * inner * sizeof(float), cudaMemcpyHostToDevice);
-    CudaStatusCheck(status, "H->D MemCpy Failed w / A");
-
-
-    status = cudaMemcpy(dev_b, B, inner * bCols * sizeof(float), cudaMemcpyHostToDevice);
-    CudaStatusCheck(status, "H->D MemCpy Failed w/ B");
 
 
     status = cudaEventRecord(start, cudaEventRecordDefault);
     CudaStatusCheck(status, "Start Event Record failed");
 
     MultiplyNaive << <blocksPerGrid, threadsPerBlock >> > (
-    dev_a,
-    dev_b,
-    dev_c,
-    aRows,
-    inner,
-    bCols
+    context.dev_a,
+    context.dev_b,
+    context.dev_c,
+    context.aRows,
+    context.inner,
+    context.bCols
     );
 
     status = cudaGetLastError();
@@ -105,15 +77,7 @@ float MatrixMultNaiveCuda(const float* A, const float* B, float* C, size_t aRows
         cudaEventElapsedTime(&ms, start, stop);
     }
 
-
-    //Copy C back to Host
-    status = cudaMemcpy(C, dev_c, bCols * aRows * sizeof(float), cudaMemcpyDeviceToHost);
-    CudaStatusCheck(status, "D->H cudaMemcpy Failed for resulting Matrix C");
-
 Error:
-    cudaFree(dev_c);
-    cudaFree(dev_a);
-    cudaFree(dev_b);
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
 
