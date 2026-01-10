@@ -11,10 +11,10 @@
 
 int main() {
 
-    const int aRows = 1256;
-    const int aCols = 3567;
-    const int bRows = 3567;
-    const int bCols = 2894;
+    const int aRows = 1243;
+    const int aCols = 2354;
+    const int bRows = 2354;
+    const int bCols = 5254;
 
     //Generate Input Matrices
     std::vector<float> A = generateMatrix(aRows, aCols, 1);
@@ -26,7 +26,7 @@ int main() {
     //Testing
     std::vector<float> NaiveRes;
     std::vector<float> TiledRes;
-    int numSamples = 5;
+    int numSamples = 15;
 
     if (aCols != bRows)
     {
@@ -35,6 +35,12 @@ int main() {
     
     float naiveSum = 0.0f;
     float tiledSum = 0.0f;
+
+    float naiveMax = FLT_MIN;
+    float tiledMax = FLT_MIN;
+
+    float naiveMin = FLT_MAX;
+    float tiledMin = FLT_MAX;
 
     cudaError_t status;
 
@@ -56,16 +62,26 @@ int main() {
 
         naiveSum += NaiveRes[i];
         tiledSum += TiledRes[i];
+
+        //Max min checks
+        if (NaiveRes[i] > naiveMax)
+            naiveMax = NaiveRes[i];
+        if(NaiveRes[i] < naiveMin)
+            naiveMin = NaiveRes[i];
+
+
+        if (TiledRes[i] > tiledMax)
+            tiledMax = TiledRes[i];
+        if (TiledRes[i] < tiledMin)
+            tiledMin = TiledRes[i];
     }
 
    
+    std::cout << "GPU-Time MatMul NAIVE  BEST: " << naiveMin << " AVERAGE: " << naiveSum / numSamples << " WORST: " << naiveMax << std::endl;
 
-    
-    
-    std::cout << "AVG. GPU-Time MatMul      NAIVE:  " << naiveSum / numSamples << std::endl;
-    std::cout << "AVG. GPU-Time MatMul      TILED:  " << tiledSum / numSamples << std::endl;
+    std::cout << "GPU-Time MatMul TILED  BEST: " << tiledMin << " AVERAGE: " << tiledSum / numSamples << " WORST: " <<tiledMax << std::endl;
 
-    std::cout << (naiveSum) / (tiledSum) << "x speedup from Tiled to Naive" << std::endl;;
+    std::cout << (naiveSum) / (tiledSum) << "AVG       speedup from Tiled to Naive" << std::endl;;
     
  
   
