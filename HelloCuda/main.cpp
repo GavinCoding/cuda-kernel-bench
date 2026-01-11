@@ -84,7 +84,7 @@ int main() {
 
         if (TiledRes[i] > tiledMax)
             tiledMax = TiledRes[i];
-        if (TiledRes[i] < tiledMurcin)
+        if (TiledRes[i] < tiledMin)
             tiledMin = TiledRes[i];
     }
 
