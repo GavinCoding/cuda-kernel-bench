@@ -15,10 +15,10 @@ Benchmarks use matrices larger than 10⁶ elements to ensure kernel execution do
 ## Implementation Highlights
 - Incremental kernel development, starting from naive implementations and progressing toward optimized versions  
 - Exploration of kernel launch dimensions and their impact on occupancy and throughput  
-- Comparison against highly optimized library implementations (cuBLAS) to contextualize performance results  
+
 
 ## Future Work
-Planned extensions include additional optimization techniques, expanded benchmarking coverage, and more standardized reporting of performance metrics. Future kernels will further explore memory hierarchy utilization, scalability, and advanced CUDA optimization strategies.
+Planned extensions include additional optimization techniques, expanded benchmarking coverage, and more standardized reporting of performance metrics. Future kernels will further explore memory hierarchy utilization, scalability, and advanced CUDA optimization strategies. Comparison against highly optimized library implementations (cuBLAS) to contextualize performance results  
 
 
 ## Performance Results
