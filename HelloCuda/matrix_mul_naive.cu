@@ -46,8 +46,8 @@ float MatrixMultNaiveCuda(CudaMatMulHandle& context)
 
 
     status = cudaEventRecord(start, cudaEventRecordDefault);
-    CudaStatusCheck(status, "Start Event Record failed");
-
+    if (CheckError(status, "Start Event Record failed   -->", __FILE__, __LINE__) != 0)
+        return -1;
     MultiplyNaive << <blocksPerGrid, threadsPerBlock >> > (
     context.dev_a,
     context.dev_b,
@@ -58,13 +58,14 @@ float MatrixMultNaiveCuda(CudaMatMulHandle& context)
     );
 
     status = cudaGetLastError();
-    CudaStatusCheck(status, "Get Last Error after Kernal Call Failure");
-
+    if (CheckError(status, "Get Last Error after Kernal Call Failure- -->", __FILE__, __LINE__) != 0)
+        return -1;
     //Device Sync 
     status = cudaDeviceSynchronize();
-    CudaStatusCheck(status, "Syncronize failed");
+    if (CheckError(status, "Syncronize failed -->", __FILE__, __LINE__) != 0)
+        return -1;
 
-    //Eveyrthing is finished so we can Get stop time
+    //Everything is finished so we can Get stop time
     status = cudaEventRecord(stop, cudaEventRecordDefault);
     if (status != cudaSuccess)
     {
@@ -77,7 +78,6 @@ float MatrixMultNaiveCuda(CudaMatMulHandle& context)
         cudaEventElapsedTime(&ms, start, stop);
     }
 
-Error:
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
 

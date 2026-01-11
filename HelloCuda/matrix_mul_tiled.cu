@@ -77,8 +77,8 @@ float MatrixMultTiledCuda(CudaMatMulHandle& context)
 
     cudaError_t status;
     status = cudaEventRecord(start, cudaEventRecordDefault);
-    CudaStatusCheck(status, "EventRecord Failed   ->");
-
+    if(CheckError(status, "EventRecord Failed   ->", __FILE__, __LINE__) != 0)
+        return -1;
    
     matMulTiled << <blocksPerGrid, threadsPerBlock >> > (
         context.dev_a,
@@ -90,12 +90,12 @@ float MatrixMultTiledCuda(CudaMatMulHandle& context)
         );
 
     status = cudaGetLastError();
-    CudaStatusCheck(status, "Get Last Error after Kernal Call Failure   ->");
-
+    if (CheckError(status, "Get Last Error after Kernal Call Failure   ->", __FILE__, __LINE__) != 0)
+        return -1;
     //Device Sync 
     status = cudaDeviceSynchronize();
-    CudaStatusCheck(status, "Syncronize failed   ->");
-
+    if (CheckError(status, "Syncronize failed   ->", __FILE__, __LINE__) != 0)
+        return -1;
     //Eveyrthing is finished so we can Get stop time
     status = cudaEventRecord(stop, cudaEventRecordDefault);
     if (status != cudaSuccess)
@@ -110,8 +110,6 @@ float MatrixMultTiledCuda(CudaMatMulHandle& context)
     }
  
 
-
-Error:
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
 

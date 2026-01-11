@@ -3,7 +3,7 @@
 #include <cuda_runtime.h>
 #include <vector>
 
-#define CudaStatusCheck(Status,Msg) {if(Status != cudaSuccess){std::cout<<Msg << " "<< cudaGetErrorString(Status) << "\nIn file: " << __FILE__ << "\nOn line number: " << __LINE__;goto Error;}}
+
 
 //struct for holding MatMul memory and execution state
 struct CudaMatMulHandle
@@ -59,3 +59,9 @@ cudaError_t copyMatMalInputsToDevice(CudaMatMulHandle& context, const float* hos
 cudaError_t copyMatMulOutputToHost(CudaMatMulHandle& context, float* host_C);
 
 void destroyMatMulContext(CudaMatMulHandle& ctx);
+
+/*
+* int return used for passing event success. Used for early exits in cases where Errors should stop progress.
+* Return ignored for in utility functions since caller is responsible for error handling
+*/
+int CheckError(cudaError_t status, const char* errorMsg, const char* file, int line);

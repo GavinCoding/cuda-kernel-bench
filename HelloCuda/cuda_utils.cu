@@ -25,7 +25,7 @@ std::vector<float> flatten(const std::vector< std::vector<float> >& tdv)
     {
         if (tdv[i].size() != colCount)
         {
-            std::cerr << "Input matrix is not Rextabgular";
+            std::cerr << "Input matrix is not Rectangular";
             return {};
         }
     }
@@ -110,8 +110,7 @@ bool validateMultiply(const float* inputA, const float* inputB, const float* inp
 
 
 cudaError_t createMatMulContext(CudaMatMulHandle& context, size_t aRows, size_t inner, size_t bCols)
-{
-    
+{  
     cudaError_t status;
     context.dev_a = 0;
     context.dev_b = 0;
@@ -121,14 +120,14 @@ cudaError_t createMatMulContext(CudaMatMulHandle& context, size_t aRows, size_t 
     context.bCols = bCols;
     //Allocated Memory on GPU (DEVICE)
     status = cudaMalloc((void**)&context.dev_a, (aRows * inner * sizeof(float)));
-    CudaStatusCheck(status, "Malloc Failed A");
+    CheckError(status, "Malloc Failed A", __FILE__, __LINE__);
 
 
     status = cudaMalloc((void**)&context.dev_b, (bCols * inner * sizeof(float)));
-    CudaStatusCheck(status, "Malloc Failed B");
+    CheckError(status, "Malloc Failed B", __FILE__, __LINE__);
 
     status = cudaMalloc((void**)&context.dev_c, (aRows * bCols * sizeof(float)));
-    CudaStatusCheck(status, "Malloc Failed C");
+    CheckError(status, "Malloc Failed C", __FILE__, __LINE__);
 
    
 
@@ -163,13 +162,13 @@ cudaError_t copyMatMalInputsToDevice(CudaMatMulHandle& context, const float* hos
 {
     cudaError_t status;
     //Copy Memory from host to Device. A and B only
-    status = cudaMemcpy(context.dev_a, host_A, context.aRows * context.inner * sizeof(float), cudaMemcpyHostToDevice);
-    CudaStatusCheck(status, "H->D MemCpy Failed input A   --> ");
+   status = cudaMemcpy(context.dev_a, host_A, context.aRows * context.inner * sizeof(float), cudaMemcpyHostToDevice);
+   CheckError(status, "H->D MemCpy Failed input A   --> ", __FILE__, __LINE__);
 
     status = cudaMemcpy(context.dev_b, host_B, context.inner * context.bCols * sizeof(float), cudaMemcpyHostToDevice);
-    CudaStatusCheck(status, "H->D MemCpy Failed input B  --> ");
+   CheckError(status, "H->D MemCpy Failed input B  --> ", __FILE__, __LINE__);
 
-Error:
+
     return status;
 }
 
@@ -179,9 +178,9 @@ cudaError_t copyMatMulOutputToHost(CudaMatMulHandle& context,float* host_C)
     //Copy C back to Host
 
     status = cudaMemcpy(host_C, context.dev_c, context.bCols * context.aRows * sizeof(float), cudaMemcpyDeviceToHost);
-    CudaStatusCheck(status, "D->H cudaMemcpy Failed for resulting Matrix C");
+    CheckError(status, "D->H cudaMemcpy Failed for resulting Matrix C  -->", __FILE__, __LINE__);
 
-Error:
+
     return status;
 }
 void destroyMatMulContext(CudaMatMulHandle& context)
@@ -191,4 +190,13 @@ void destroyMatMulContext(CudaMatMulHandle& context)
     cudaFree(context.dev_b);
     return;
 }
-//cudaError_t free
+int CheckError(cudaError_t status, const char* errorMsg, const char* file, int line)
+{
+    if(status != cudaSuccess)
+    {
+        std::cout<< errorMsg << " "<< cudaGetErrorString(status) << "\nIn file: " << file << "\nOn line number: " << line;
+        return -1;
+    }
+    return 0;
+}
+

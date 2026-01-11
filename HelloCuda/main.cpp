@@ -47,18 +47,30 @@ int main() {
     CudaMatMulHandle context{};
 
     status = createMatMulContext(context, aRows, aCols, bCols);
-    CudaStatusCheck(status, "createMatMulContext Failed ->");
+    if (CheckError(status, "createMatMulContext Failed -> ", __FILE__, __LINE__) != 0)
+        return -1;
+         
 
 
     status = copyMatMalInputsToDevice(context, A.data(), B.data());
-    CudaStatusCheck(status, "copyMatMalInputsToDevice Failed ->");
+    if (CheckError(status, "copyMatMalInputsToDevice Failed ->", __FILE__, __LINE__) != 0)
+    {
+        return -1;
+    }
+
+    float naiveTemp = 0;
+    float tiledTemp = 0;
 
     for (int i = 0; i < numSamples; i++)
     {
+        naiveTemp = MatrixMultNaiveCuda(context);
+        tiledTemp = MatrixMultTiledCuda(context);
+        
+        if (naiveTemp == -1 || tiledTemp == -1)
+            break;
 
-
-        NaiveRes.push_back(MatrixMultNaiveCuda(context));
-        TiledRes.push_back(MatrixMultTiledCuda(context));
+        NaiveRes.push_back(naiveTemp);
+        TiledRes.push_back(tiledTemp);
 
         naiveSum += NaiveRes[i];
         tiledSum += TiledRes[i];
@@ -72,16 +84,19 @@ int main() {
 
         if (TiledRes[i] > tiledMax)
             tiledMax = TiledRes[i];
-        if (TiledRes[i] < tiledMin)
+        if (TiledRes[i] < tiledMurcin)
             tiledMin = TiledRes[i];
     }
 
-   
-    std::cout << "GPU-Time MatMul NAIVE  BEST: " << naiveMin << " AVERAGE: " << naiveSum / numSamples << " WORST: " << naiveMax << std::endl;
+    if (naiveTemp != -1 && tiledTemp != -1)
+    {
+        std::cout << "GPU-Time MatMul NAIVE  BEST: " << naiveMin << " AVERAGE: " << naiveSum / numSamples << " WORST: " << naiveMax << std::endl;
 
-    std::cout << "GPU-Time MatMul TILED  BEST: " << tiledMin << " AVERAGE: " << tiledSum / numSamples << " WORST: " <<tiledMax << std::endl;
+        std::cout << "GPU-Time MatMul TILED  BEST: " << tiledMin << " AVERAGE: " << tiledSum / numSamples << " WORST: " << tiledMax << std::endl;
 
-    std::cout << (naiveSum) / (tiledSum) << "AVG       speedup from Tiled to Naive" << std::endl;;
+        std::cout << (naiveSum) / (tiledSum) << "AVG       speedup from Tiled to Naive" << std::endl;
+    }
+    
     
  
   
