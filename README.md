@@ -34,7 +34,7 @@ Each test reports the minimum, average, and maximum runtime over 15 runs.
 
 In most cases, the tiled version performs much better than the naive matrix multiplication. This is because the use of shared memory significantly reduces the number of global memory reads required. As tile width increases, we also observe improved performance for the same reason: fewer global memory accesses are needed when more of the input matrices are reused per global load. However, it should be noted that shared memory per SM is limited, and increasing tile size can significantly reduce the number of warps resident on an SM. In scenarios where SM memory resources are heavily utilized, this reduction can decrease occupancy and negatively impact performance(not this one). 
 
-Next, I unrolled the tiled kernel to eliminate the overhead of the inner loop. This optimization yielded up to a 1.89× speedup over the looped tiled matrix multiplication for square matrices of size 2048. Additionally, I added support for cuBLAS SGEMM to benchmark my custom kernels against a highly optimized, production-grade implementation.
+Next, I unrolled the tiled kernel to eliminate the overhead of the inner loop. This optimization yielded up to a **1.89×** speedup over the looped tiled matrix multiplication for square matrices of size 2048. Additionally, I added support for cuBLAS SGEMM to benchmark my custom kernels against a highly optimized, production-grade implementation.
 
 |       Type      | Best   | Avg    | Worst  | % of cuBLAS |
 | --------------- | ------ | ------ | ------ | ----------- |
