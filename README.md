@@ -32,6 +32,7 @@ Each test reports the minimum, average, and maximum runtime over 15 runs.
 | 4    | 1024   | 1024  | 1024   | 16        | 16x16 | 15.95     | 17.608    | 21.104    | 17.284    | 19.097    | 23.574    | **0.922x**      |
 | 5    | 2048   | 2048  | 2048   | 16        | 16x16 | 128.267   | 132.681   | 158.708   | 136.386   | 139.301   | 148.56    | **0.952x**      |
 
+In most cases, the tiled version performs much better than the naive matrix multiplication. This is because the use of shared memory significantly reduces the number of global memory reads required. As tile width increases, we also observe improved performance for the same reason: fewer global memory accesses are needed when more of the input matrices are reused per global load. However, it should be noted that shared memory per SM is limited, and increasing tile size can significantly reduce the number of warps resident on an SM. In scenarios where SM memory resources are heavily utilized, this reduction can decrease occupancy and negatively impact performance(not this one). 
 
 Next, I unrolled the tiled kernel to eliminate the overhead of the inner loop. This optimization yielded up to a 1.89× speedup over the looped tiled matrix multiplication for square matrices of size 2048. Additionally, I added support for cuBLAS SGEMM to benchmark my custom kernels against a highly optimized, production-grade implementation.
 
@@ -40,3 +41,6 @@ Next, I unrolled the tiled kernel to eliminate the overhead of the inner loop. T
 | Naive           | 183.78 | 190.02 | 245.26 | 3.3         |
 | Tiled Unwrapped | 63.91  | 66.6   | 81.582 | 9.43        |
 | cuBLAS SGEMM    | 0.88   | 6.28   | 78.698 | 100         |
+
+
+Unwrapping provided a substantial boost to performance for a variety of reasons. First, instruction count is reduced by eliminating loop-specific operations such as loading, incrementing, and checking conditionals associated with loop variables. We also avoid consuming valuable register space for loop indices. Additionally, unwrapping simplifies control flow, which is generally preferable on GPUs and allows for more efficient execution.
