@@ -108,6 +108,56 @@ bool validateMultiply(const float* inputA, const float* inputB, const float* inp
 
 
 
+cudaError_t createReduceContext(CudaReduceHandle& context, size_t N)
+{
+    cudaError_t status;
+
+    context.N = N;
+    context.dev_output = 0;
+    context.dev_input = 0;
+    
+    //alloc input and output
+    status = cudaMalloc((void**)&context.dev_input, context.N *sizeof(float));
+    CheckError(status, "Failed to Malloc Reduction context input  -->", __FILE__, __LINE__);
+
+    status = cudaMalloc((void**)&context.dev_output, sizeof(float));
+    CheckError(status, "Failed to Malloc Reduction context output  -->", __FILE__, __LINE__);
+
+    return status;
+}
+
+
+cudaError_t copyReduceInputsToDevice(CudaReduceHandle& context, const float* input)
+{
+    cudaError_t status;
+
+    status = cudaMemcpy(context.dev_input, input, context.N * sizeof(float), cudaMemcpyHostToDevice);
+    CheckError(status, "Failed to Copy Inputs into Context  -->", __FILE__, __LINE__);
+
+    //cudaMemset(context.dev_output, 0, sizeof(float));
+
+    return status;
+}
+
+
+cudaError_t copyReduceOutputToHost(CudaReduceHandle& context, float* output)
+{
+    cudaError_t status;
+
+    status = cudaMemcpy(output, context.dev_output, sizeof(float), cudaMemcpyDeviceToHost);
+    CheckError(status, "Failed to Copy Outputs into Context  -->", __FILE__, __LINE__);
+
+    return status;
+}
+
+void destroyReduceContext(CudaReduceHandle& ctx)
+{
+    cudaFree(ctx.dev_input);
+    cudaFree(ctx.dev_output);
+}
+
+
+
 
 cudaError_t createMatMulContext(CudaMatMulHandle& context, size_t aRows, size_t inner, size_t bCols)
 {  
@@ -115,49 +165,32 @@ cudaError_t createMatMulContext(CudaMatMulHandle& context, size_t aRows, size_t 
     context.dev_a = 0;
     context.dev_b = 0;
     context.dev_c = 0;
+    context.cublasHandle = 0;
     context.aRows = aRows;
     context.inner = inner;
     context.bCols = bCols;
     //Allocated Memory on GPU (DEVICE)
     status = cudaMalloc((void**)&context.dev_a, (aRows * inner * sizeof(float)));
-    CheckError(status, "Malloc Failed A", __FILE__, __LINE__);
+    CheckError(status, "Malloc Failed A  -->", __FILE__, __LINE__);
 
 
     status = cudaMalloc((void**)&context.dev_b, (bCols * inner * sizeof(float)));
-    CheckError(status, "Malloc Failed B", __FILE__, __LINE__);
+    CheckError(status, "Malloc Failed B  -->", __FILE__, __LINE__);
 
     status = cudaMalloc((void**)&context.dev_c, (aRows * bCols * sizeof(float)));
-    CheckError(status, "Malloc Failed C", __FILE__, __LINE__);
+    CheckError(status, "Malloc Failed C  -->", __FILE__, __LINE__);
 
-   
+    //Create CublasContext
+    cublasStatus_t blasStatus = cublasCreate_v2(&context.cublasHandle);
+    if (blasStatus != CUBLAS_STATUS_SUCCESS) {
+        std::cerr << "cublasCreate failed with status " << blasStatus << "\n";
+        return cudaErrorUnknown;
+    }
+    cublasSetStream(context.cublasHandle, 0); // default stream
 
-
-
-Error:
     return status;
 }
 
-
-/*
-* //Allocated Memory on GPU (DEVICE)
-    status = cudaMalloc((void**)&context.dev_a, (context.aRows * context.inner * sizeof(float)));
-    CudaStatusCheck(status, "Malloc Failed A");
-
-
-    status = cudaMalloc((void**)&context.dev_b, (context.bCols * context.inner * sizeof(float)));
-    CudaStatusCheck(status, "Malloc Failed B");
-
-    status = cudaMalloc((void**)&context.dev_c, (context.aRows * context.bCols * sizeof(float)));
-    CudaStatusCheck(status, "Malloc Failed C");
-
-    //Copy Memory from host to Device. A and B only
-    status = cudaMemcpy(dev_a, A, aRows * inner * sizeof(float), cudaMemcpyHostToDevice);
-    CudaStatusCheck(status, "H->D MemCpy Failed w / A");
-
-
-    status = cudaMemcpy(dev_b, B, inner * bCols * sizeof(float), cudaMemcpyHostToDevice);
-    CudaStatusCheck(status, "H->D MemCpy Failed w/ B");
-*/
 cudaError_t copyMatMalInputsToDevice(CudaMatMulHandle& context, const float* host_A, const float* host_B)
 {
     cudaError_t status;
@@ -185,6 +218,7 @@ cudaError_t copyMatMulOutputToHost(CudaMatMulHandle& context,float* host_C)
 }
 void destroyMatMulContext(CudaMatMulHandle& context)
 {
+    cublasDestroy(context.cublasHandle);
     cudaFree(context.dev_c);
     cudaFree(context.dev_a);
     cudaFree(context.dev_b);

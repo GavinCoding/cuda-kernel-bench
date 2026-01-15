@@ -1,6 +1,7 @@
 #pragma once
 #include <device_launch_parameters.h>
 #include <cuda_runtime.h>
+#include <cublas_v2.h>
 #include <vector>
 
 
@@ -15,6 +16,18 @@ struct CudaMatMulHandle
     size_t aRows;
     size_t inner;
     size_t bCols;
+
+    cublasHandle_t cublasHandle;
+};
+struct CudaReduceHandle
+{
+    float* dev_input;
+    float* dev_output;
+
+    size_t N;
+
+    //Handler for thrust call???
+
 };
 
 
@@ -44,21 +57,31 @@ bool validateMultiply(const float* inputA, const float* inputB, const float* inp
 
 //Resource Allocators and Managers
 
-/*
-* Creates Context for MatMul Operations
-* Used for Allocating the proper amount of device Memory and error checking along the way
-*/
+//Creates Context for Reduction operations
+cudaError_t createReduceContext(CudaReduceHandle& context, size_t N);
+
+
+//Fills Device Memory with Inputs (Host->Device)
+cudaError_t copyReduceInputsToDevice(CudaReduceHandle& context, const float* input);
+
+//Copies Results back to Host Memory
+cudaError_t copyReduceOutputToHost(CudaReduceHandle& context, float* output);
+
+void destroyReduceContext(CudaReduceHandle& ctx);
+
+//Creates Context for MatMul Operations
 cudaError_t createMatMulContext(CudaMatMulHandle& context, size_t aRows, size_t inner, size_t bCols);
-/*
-* Fills Device Memory with Inputs (Host->Device)
-*/
+
+//Fills Device Memory with Inputs (Host->Device)
 cudaError_t copyMatMalInputsToDevice(CudaMatMulHandle& context, const float* host_A, const float* host_B);
-/*
-* Copies Results back to Host Memory 
-*/
+
+// Copies Results back to Host Memory 
 cudaError_t copyMatMulOutputToHost(CudaMatMulHandle& context, float* host_C);
 
 void destroyMatMulContext(CudaMatMulHandle& ctx);
+
+
+
 
 /*
 * int return used for passing event success. Used for early exits in cases where Errors should stop progress.

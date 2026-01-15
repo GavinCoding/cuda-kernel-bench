@@ -46,10 +46,46 @@ __global__ void matMulTiled(const float* A, const float* B, float* C, size_t aRo
         __syncthreads();
 
         //dot product of a and b tiles
-        for (int j = 0; j < TILESIZE; j++)
+        /*for (int j = 0; j < TILESIZE; j++)
+        {*/
+       
+        /*for (int j = 0; j < TILESIZE; j++)
         {
-            value += aShared[ty][j] * bShared[j][tx];
-        }
+            value += aShared[ty][0] * bShared[0][tx];
+        }*/
+            value += aShared[ty][0] * bShared[0][tx];
+            value += aShared[ty][1] * bShared[1][tx];
+            value += aShared[ty][2] * bShared[2][tx];
+            value += aShared[ty][3] * bShared[3][tx];
+            value += aShared[ty][4] * bShared[4][tx];
+            value += aShared[ty][5] * bShared[5][tx];
+            value += aShared[ty][6] * bShared[6][tx];
+            value += aShared[ty][7] * bShared[7][tx];
+            value += aShared[ty][8] * bShared[8][tx];
+            value += aShared[ty][9] * bShared[9][tx];
+            value += aShared[ty][10] * bShared[10][tx];
+            value += aShared[ty][11] * bShared[11][tx];
+            value += aShared[ty][12] * bShared[12][tx];
+            value += aShared[ty][13] * bShared[13][tx];
+            value += aShared[ty][14] * bShared[14][tx];
+            value += aShared[ty][15] * bShared[15][tx];
+            value += aShared[ty][16] * bShared[16][tx];
+            value += aShared[ty][17] * bShared[17][tx];
+            value += aShared[ty][18] * bShared[18][tx];
+            value += aShared[ty][19] * bShared[19][tx];
+            value += aShared[ty][20] * bShared[20][tx];
+            value += aShared[ty][21] * bShared[21][tx];
+            value += aShared[ty][22] * bShared[22][tx];
+            value += aShared[ty][23] * bShared[23][tx];
+            value += aShared[ty][24] * bShared[24][tx];
+            value += aShared[ty][25] * bShared[25][tx];
+            value += aShared[ty][26] * bShared[26][tx];
+            value += aShared[ty][27] * bShared[27][tx];
+            value += aShared[ty][28] * bShared[28][tx];
+            value += aShared[ty][29] * bShared[29][tx];
+            value += aShared[ty][30] * bShared[30][tx];
+            value += aShared[ty][31] * bShared[31][tx];
+   
         __syncthreads();
         //inside K
     }
