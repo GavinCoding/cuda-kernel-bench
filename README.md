@@ -31,3 +31,12 @@ Each test reports the minimum, average, and maximum runtime over 15 runs.
 | 3    | 2048   | 2048  | 2048   | 32        | 32x32 | 180.849   | 185.788   | 211.494   | 123.957   | 126.055   | 132.709   | **1.474x**      |
 | 4    | 1024   | 1024  | 1024   | 16        | 16x16 | 15.95     | 17.608    | 21.104    | 17.284    | 19.097    | 23.574    | **0.922x**      |
 | 5    | 2048   | 2048  | 2048   | 16        | 16x16 | 128.267   | 132.681   | 158.708   | 136.386   | 139.301   | 148.56    | **0.952x**      |
+
+
+Next, I unrolled the tiled kernel to eliminate the overhead of the inner loop. This optimization yielded up to a 1.89× speedup over the looped tiled matrix multiplication for square matrices of size 2048. Additionally, I added support for cuBLAS SGEMM to benchmark my custom kernels against a highly optimized, production-grade implementation.
+
+|       Type      | Best   | Avg    | Worst  | % of cuBLAS |
+| --------------- | ------ | ------ | ------ | ----------- |
+| Naive           | 183.78 | 190.02 | 245.26 | 3.3         |
+| Tiled Unwrapped | 63.91  | 66.6   | 81.582 | 9.43        |
+| cuBLAS SGEMM    | 0.88   | 6.28   | 78.698 | 100         |
