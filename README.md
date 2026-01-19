@@ -4,7 +4,7 @@
 Basic CUDA kernels written for the purpose of exploring optimization techniques and benchmarking. Thus far, this project is focused on matrix multiplication algorithms and kernel launch dimension optimizations.
 
 ## Motivation
-A variety of kernels written to explore performance characteristics and benchmark against both CPU implementations and cuBLAS. The goal is learning and exploration—building a foundation of kernels that enables deeper investigation into optimization strategies, benchmarking methodology, and standardized performance analytics and reporting.
+A variety of kernels written to explore performance characteristics and benchmark against both custom implementations and cuBLAS. The goal is learning and exploration—building a foundation of kernels that enables deeper investigation into optimization strategies, benchmarking methodology, and standardized performance analytics and reporting.
 
 ## Performance and Analytics
 This project emphasizes quantitative performance analysis. Kernels are evaluated across multiple dimensions, including execution time, and the impact of launch configuration and memory access patterns. As optimizations are introduced, results are compared against prior implementations to highlight measurable performance gains. Times measured represent GPU time only. Seperation of context and memory management allow for strict timing using the cuda events system.
