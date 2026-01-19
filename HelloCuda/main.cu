@@ -15,7 +15,7 @@
 
 
 //DEBUG
-//nvcc -g -G -lineinfo -arch=sm_89 -Xcompiler="/Od /Zi" main.cu matrix_mul_naive.cu matrix_mul_tiled.cu cublas_matMul.cu reduce.cu cuda_utils.cu -lcublas -o cuda_app_debug.exe
+//nvcc -g -G -arch=sm_89 -Xcompiler="/Od /Zi" main.cu matrix_mul_naive.cu matrix_mul_tiled.cu cublas_matMul.cu reduce.cu cuda_utils.cu -lcublas -o cuda_app_debug.exe
 
 
 //RELEASE
@@ -46,7 +46,7 @@ std::vector<float> generateMatrix2D(int rows, int cols, float seed)
 // Reduction runner
 // -----------------------------------------------------------------------------
 
-int runReduction(int numElements)
+int runReduction(int numElements, int numSamples)
 {
     std::vector<float> input = generateVector(numElements, 1.0f);
 
@@ -59,22 +59,75 @@ int runReduction(int numElements)
 
     status = copyReduceInputsToDevice(context, input.data());
     if (CheckError(status, "copyReduceInputsToDevice Failed -> ", __FILE__, __LINE__) != 0)
-        goto Error;
+        {destroyReduceContext(context);return 0;}
 
-    cudaMemset(context.dev_output, 0, sizeof(float));
+    float v1Sum = 0.0f, v2Sum = 0.0f;
+    float v1Min = FLT_MAX, v2Min = FLT_MAX;
+    float v1Max = FLT_MIN, v2Max = FLT_MIN;
 
     float result = 0.0f;
-    float timeMs = cudaReduce_v1(context);
 
-    if (timeMs == -1)
-        goto Error;
+    for (int i = 0; i < numSamples; ++i)
+    {
+        // --------------------
+        // v1
+        // --------------------
+        cudaMemset(context.dev_output, 0, sizeof(float));
 
-    copyReduceOutputToHost(context, &result);
+        float t1 = cudaReduce_v1(context);
+        if (t1 == -1)
+            {destroyReduceContext(context);return 0;}
 
-    std::cout << "Reduction Result: " << result << "\n";
-    std::cout << "Kernel Time (ms): " << timeMs << "\n";
+        copyReduceOutputToHost(context, &result);
 
-Error:
+
+        v1Sum += t1;
+        v1Min = std::min(v1Min, t1);
+        v1Max = std::max(v1Max, t1);
+
+        // --------------------
+        // v2
+        // --------------------
+        cudaMemset(context.dev_output, 0, sizeof(float));
+
+        float t2 = cudaReduce_v2(context);
+        if (t2 == -1)
+        {destroyReduceContext(context);return 0;}
+
+        copyReduceOutputToHost(context, &result);
+
+        v2Sum += t2;
+        v2Min = std::min(v2Min, t2);
+        v2Max = std::max(v2Max, t2);
+    }
+
+    constexpr int W_LABEL = 24;
+    constexpr int W_NUM = 10;
+
+    std::cout << std::fixed << std::setprecision(3);
+    std::cout
+        << std::left << std::setw(W_LABEL) << "Kernel"
+        << std::right << std::setw(W_NUM) << "BEST"
+        << std::setw(W_NUM) << "AVG"
+        << std::setw(W_NUM) << "WORST"
+        << "\n";
+
+    std::cout << std::string(44, '-') << "\n";
+
+    std::cout
+        << std::left << std::setw(W_LABEL) << "Reduction v1"
+        << std::right << std::setw(W_NUM) << v1Min
+        << std::setw(W_NUM) << (v1Sum / numSamples)
+        << std::setw(W_NUM) << v1Max
+        << "\n";
+
+    std::cout
+        << std::left << std::setw(W_LABEL) << "Reduction v2"
+        << std::right << std::setw(W_NUM) << v2Min
+        << std::setw(W_NUM) << (v2Sum / numSamples)
+        << std::setw(W_NUM) << v2Max
+        << "\n";
+
     destroyReduceContext(context);
     return 0;
 }
@@ -99,7 +152,7 @@ int runMatMulBench(int aRows, int aCols, int bCols, int numSamples)
 
     status = copyMatMalInputsToDevice(context, A.data(), B.data());
     if (CheckError(status, "copyMatMalInputsToDevice Failed -> ", __FILE__, __LINE__) != 0)
-        goto Error;
+        {destroyMatMulContext(context);return 0;}
 
     float naiveSum = 0.0f, tiledSum = 0.0f, cublasSum = 0.0f;
     float naiveMin = FLT_MAX, tiledMin = FLT_MAX, cublasMin = FLT_MAX;
@@ -162,7 +215,6 @@ int runMatMulBench(int aRows, int aCols, int bCols, int numSamples)
         << std::setw(W_NUM) << cublasMax
         << std::setw(W_NUM + 6) << "100.000\n";
 
-Error:
     destroyMatMulContext(context);
     return 0;
 }
@@ -184,7 +236,8 @@ int main(int argc, char** argv)
     if (std::strcmp(argv[1], "reduce") == 0)
     {
         int n = (argc >= 3) ? std::atoi(argv[2]) : 1024;
-        return runReduction(n);
+        int samples = (argc >= 4) ? std::atoi(argv[3]) : 10;
+        return runReduction(n, samples);
     }
 
     if (std::strcmp(argv[1], "matmul") == 0)

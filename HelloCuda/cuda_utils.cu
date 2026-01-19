@@ -113,14 +113,20 @@ cudaError_t createReduceContext(CudaReduceHandle& context, size_t N)
     cudaError_t status;
 
     context.N = N;
+    context.numBlocks = ((context.N + 256 - 1) / 256);
     context.dev_output = 0;
     context.dev_input = 0;
+    context.dev_blockSums = 0;
     
     //alloc input and output
     status = cudaMalloc((void**)&context.dev_input, context.N *sizeof(float));
     CheckError(status, "Failed to Malloc Reduction context input  -->", __FILE__, __LINE__);
 
     status = cudaMalloc((void**)&context.dev_output, sizeof(float));
+    CheckError(status, "Failed to Malloc Reduction context output  -->", __FILE__, __LINE__);
+
+    //Max number of blocks. Each float of blockSums is the sum of a block computed by v2+ kernels
+    status = cudaMalloc((void**)&context.dev_blockSums, context.numBlocks * sizeof(float));
     CheckError(status, "Failed to Malloc Reduction context output  -->", __FILE__, __LINE__);
 
     return status;
@@ -134,7 +140,10 @@ cudaError_t copyReduceInputsToDevice(CudaReduceHandle& context, const float* inp
     status = cudaMemcpy(context.dev_input, input, context.N * sizeof(float), cudaMemcpyHostToDevice);
     CheckError(status, "Failed to Copy Inputs into Context  -->", __FILE__, __LINE__);
 
-    //cudaMemset(context.dev_output, 0, sizeof(float));
+    //Zero out all result memory
+    cudaMemset(context.dev_output, 0, sizeof(float));
+    cudaMemset(context.dev_blockSums, 0, context.numBlocks * sizeof(float));
+
 
     return status;
 }

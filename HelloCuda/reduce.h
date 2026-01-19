@@ -6,6 +6,13 @@
 
 #include <algorithm>
 
+#define BLOCKSIZE 256
+
 //V1 of reduction. Naive implementation
 __global__ void reduce_v1(const float* input, float* output, size_t N);
+
+//V2 of reduction. First implementation with shared memory.
+__global__ void reduce_v2(const float* input, float* blockSums, size_t N);
+
 float cudaReduce_v1(CudaReduceHandle& ctx);
+float cudaReduce_v2(CudaReduceHandle& ctx);

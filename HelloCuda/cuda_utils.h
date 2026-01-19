@@ -24,6 +24,9 @@ struct CudaReduceHandle
     float* dev_input;
     float* dev_output;
 
+    float* dev_blockSums;
+    size_t numBlocks;
+
     size_t N;
 
     //Handler for thrust call???
